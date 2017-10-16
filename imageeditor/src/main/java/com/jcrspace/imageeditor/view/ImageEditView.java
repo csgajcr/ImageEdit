@@ -37,6 +37,7 @@ public class ImageEditView extends ZoomImageView {
     private float startY;
     private BaseAction currentEditAction; //当前编辑的线条
     private int currentEditActionId; //当前编辑的线条Id
+    private static int EXPAND_ANCHOR_POINT_TOUCH_SIZE = 7;//扩充锚点触摸的判定范围
 
     float[] matrix = new float[9]; // 当前的图像的矩阵信息
 
@@ -310,7 +311,6 @@ public class ImageEditView extends ZoomImageView {
      */
     private void isActionControl(float x, float y) {
         if (currentEditAction instanceof LineAction) {
-            LineAction lineAction = (LineAction) currentEditAction;
             lineActionControl(x, y);
         } else if (currentEditAction instanceof RectAction) {
             rectActionControl(x, y); // 判断点击矩形的什么地方，锚点还是矩形内部，如果都不是则看能不能选择到其他元素
@@ -327,7 +327,14 @@ public class ImageEditView extends ZoomImageView {
      */
     private void moving(float x, float y) {
         if (currentEditAction instanceof LineAction) {
-
+            LineAction lineAction = (LineAction) currentEditAction;
+            lineAction.setStartX(lineAction.getStartX() + x - startX);
+            lineAction.setEndX(lineAction.getEndX() + x - startX);
+            lineAction.setStartY(lineAction.getStartY() + y - startY);
+            lineAction.setEndY(lineAction.getEndY() + y - startY);
+            mImageEditorDrawable.updateLine(currentEditActionId,lineAction);
+            startX = x;
+            startY = y;
         } else if (currentEditAction instanceof RectAction) {
             RectAction rectAction = (RectAction) currentEditAction;
             RectF rectF = rectAction.getRect();
@@ -369,14 +376,14 @@ public class ImageEditView extends ZoomImageView {
     private void rectActionControl(float x, float y) {
         RectAction rectAction = (RectAction) currentEditAction;
         Rect anchorPoint = rectAction.getAnchorPointRect();
-        GraphUtil.zoomRect(anchorPoint, 5);
-        if (anchorPoint.contains((int) x, (int) y)) {
+        GraphUtil.zoomRect(anchorPoint, EXPAND_ANCHOR_POINT_TOUCH_SIZE);
+        if (anchorPoint.contains((int) x, (int) y)) { //点击的锚点
             startX = rectAction.getRect().left;
             startY = rectAction.getRect().top;
             currentState = ImageEditorState.RECT_EDITING;
             return;
         }
-        if (rectAction.getRect().contains(x, y)) {
+        if (rectAction.getRect().contains(x, y)) { //点击的圆形内部
             currentState = ImageEditorState.MOVING;
             return;
         }
@@ -392,9 +399,9 @@ public class ImageEditView extends ZoomImageView {
     private void lineActionControl(float x, float y) {
         LineAction lineAction = (LineAction) currentEditAction;
         Rect[] anchorPoints = lineAction.getAnchorPoints();
-        //[0]为Start锚点，[1]为End锚点
-        GraphUtil.zoomRect(anchorPoints[0], 5);
-        GraphUtil.zoomRect(anchorPoints[1], 5);
+        //[0]为Start锚点，[1]为End锚点 ，增加判定范围
+        GraphUtil.zoomRect(anchorPoints[0], EXPAND_ANCHOR_POINT_TOUCH_SIZE);
+        GraphUtil.zoomRect(anchorPoints[1], EXPAND_ANCHOR_POINT_TOUCH_SIZE);
         if (anchorPoints[0].contains((int) x, (int) y)) {
             //鼠标指向了起点处的锚点
             startX = lineAction.getEndX();
@@ -408,6 +415,9 @@ public class ImageEditView extends ZoomImageView {
             startX = lineAction.getStartX();
             startY = lineAction.getStartY();
             currentState = ImageEditorState.LINE_EDITING;
+            return;
+        } else if (mImageEditorDrawable.isSelectInAction(x,y,lineAction)){
+            currentState = ImageEditorState.MOVING;
             return;
         }
         selectAction();

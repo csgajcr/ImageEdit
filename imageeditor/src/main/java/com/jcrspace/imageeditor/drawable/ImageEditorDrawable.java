@@ -19,6 +19,7 @@ import com.jcrspace.imageeditor.action.LineAction;
 import com.jcrspace.imageeditor.action.RectAction;
 import com.jcrspace.imageeditor.action.TextAction;
 import com.jcrspace.imageeditor.anchor.RectAnchorPoint;
+import com.jcrspace.imageeditor.utils.GraphUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -172,19 +173,37 @@ public class ImageEditorDrawable extends BitmapDrawable {
      * @param action
      * @return
      */
-    private boolean isSelectInAction(float x, float y, LineAction action) {
-        //触摸点的判定范围
-        RectF rectF = new RectF(x - 11, y - 11, x + 11, y + 11);
+    public boolean isSelectInAction(float x, float y, LineAction action) {
+        //触摸点的判定范围,r为半径
+        float r = 30;
         //直线斜率
-        float k = (action.getEndX() - action.getStartX()) / (action.getEndY() - action.getStartY());
-        for (float i = 0; i <= Math.abs(action.getEndX() - action.getStartX()); i++) {
-            float dx = Math.abs(action.getStartX() + i);
-            float dy = k * dx;
-            if (rectF.contains(dx, dy)) {
-                return true;
-            }
+        /**
+         * 推导公式
+         * ax + by + c=0;
+         * aex + bey + c = 0
+         * asx + bsy + c = 0
+         * a(ex-sx) + b(ey-sy) = 0
+         * a(ex-sx) = -b(ey-sy)
+         * (ex-sx)/(ey-sy) = -b/a
+         */
+        float k = (action.getEndY() - action.getStartY()) / (action.getEndX() - action.getStartX());
+        float c = action.getStartY() - k * action.getStartX();
+        //直线方程 y=kx + c , ax + by + c = 0
+        //即 kx + c + (-y) = 0。即a=k b=-1 c=c 将圆心(触摸点)带入
+        //求点到直线的距离
+        double result = Math.abs((k * x - y + c) / Math.sqrt((Math.pow(k, 2) + 1)));
+        //判定是否半径之内
+        if (result > r) {
+            return false;
+        } else {
+            RectF rectF = new RectF();
+            rectF.left = action.getStartX() > action.getEndX() ? action.getEndX() : action.getStartX();
+            rectF.right = action.getStartX() > action.getEndX() ? action.getStartX() : action.getEndX();
+            rectF.top = action.getStartY() > action.getEndY() ? action.getEndY() : action.getStartY();
+            rectF.bottom = action.getStartY() > action.getEndY() ? action.getStartY() : action.getEndY();
+            GraphUtil.zoomRect(rectF,r);
+            return rectF.contains(x,y);
         }
-        return false;
     }
 
     /**
