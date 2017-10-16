@@ -15,9 +15,29 @@
         android:src="@drawable/bg_1"
         android:layout_weight="1"
         android:id="@+id/img_view"/>
-    <Button
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="添加元素"
-        android:id="@+id/btn_add" />
+        android:layout_height="wrap_content">
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="添加直线"
+            android:layout_alignParentLeft="true"
+            android:id="@+id/btn_add_line" />
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="添加矩形"
+            android:layout_marginLeft="10dp"
+            android:layout_toRightOf="@+id/btn_add_line"
+            android:id="@+id/btn_add_rect" />
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="添加文字"
+            android:layout_marginLeft="10dp"
+            android:layout_toRightOf="@+id/btn_add_rect"
+            android:id="@+id/btn_add_text" />
+    </RelativeLayout>
+
 </LinearLayout>

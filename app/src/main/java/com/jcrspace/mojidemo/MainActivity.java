@@ -13,6 +13,7 @@ import com.jcrspace.imageeditor.view.ImageEditView;
 public class MainActivity extends AppCompatActivity {
 
     private ImageEditView imageEditView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -21,11 +22,22 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         imageEditView = (ImageEditView) findViewById(R.id.img_view);
-        findViewById(R.id.btn_add).setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.btn_add_line).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                imageEditView.setTextEditMode(Color.GREEN,20);
-//                imageEditView.setRectSelectionMode(Color.GREEN,10);
+                imageEditView.setLineMode(Color.RED, 10);
+            }
+        });
+        findViewById(R.id.btn_add_rect).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                imageEditView.setRectSelectionMode(Color.RED, 10);
+            }
+        });
+        findViewById(R.id.btn_add_text).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                imageEditView.setTextEditMode(Color.GREEN, 20);
             }
         });
     }

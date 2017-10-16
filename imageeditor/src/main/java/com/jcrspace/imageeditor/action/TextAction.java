@@ -15,6 +15,7 @@ public class TextAction implements BaseAction {
     private TextPaint paint;
     private int color;
     private int fontSize;
+    private boolean isSelect = false;
 
     public TextAction(String text, @ColorInt int color, float startX, float startY, int fontSize) {
         this.text = text;
@@ -72,5 +73,15 @@ public class TextAction implements BaseAction {
 
     public void setStartY(float startY) {
         this.startY = startY;
+    }
+
+    @Override
+    public boolean isSelect() {
+        return isSelect;
+    }
+
+    @Override
+    public void setSelect(boolean isSelect){
+        this.isSelect = isSelect;
     }
 }

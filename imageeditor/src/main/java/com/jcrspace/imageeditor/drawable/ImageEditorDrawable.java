@@ -1,17 +1,24 @@
 package com.jcrspace.imageeditor.drawable;
 
+import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.GradientDrawable;
 import android.support.annotation.ColorInt;
 import android.text.Layout;
 import android.text.StaticLayout;
 
+import com.jcrspace.imageeditor.R;
 import com.jcrspace.imageeditor.action.BaseAction;
 import com.jcrspace.imageeditor.action.LineAction;
 import com.jcrspace.imageeditor.action.RectAction;
 import com.jcrspace.imageeditor.action.TextAction;
+import com.jcrspace.imageeditor.anchor.RectAnchorPoint;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,9 +30,11 @@ import java.util.List;
 public class ImageEditorDrawable extends BitmapDrawable {
 
     private List<BaseAction> actionList = new ArrayList<>();
+    private Context context;
 
-    public ImageEditorDrawable(BitmapDrawable drawable) {
+    public ImageEditorDrawable(BitmapDrawable drawable, Context context) {
         super(drawable.getBitmap());
+        this.context = context;
     }
 
     @Override
@@ -46,17 +55,22 @@ public class ImageEditorDrawable extends BitmapDrawable {
 
     private void drawLine(Canvas canvas, LineAction action) {
         canvas.drawLine(action.getStartX(), action.getStartY(), action.getEndX(), action.getEndY(), action.getPaint());
+        if (action.isSelect()) {
+            drawLineAnchorPoint(action, canvas);
+        }
     }
 
     private void drawRect(Canvas canvas, RectAction action) {
         canvas.drawRect(action.getRect(), action.getPaint());
+        if (action.isSelect()) {
+            drawRectAnchorPoint(action, canvas);
+        }
     }
 
     private void drawText(Canvas canvas, TextAction action) {
-
 //        canvas.drawText(action.getText(),action.getStartX(),action.getStartY(),action.getPaint());
         canvas.save();
-        canvas.translate(action.getStartX(),action.getStartY());
+        canvas.translate(action.getStartX(), action.getStartY());
         StaticLayout myStaticLayout = new StaticLayout(action.getText(), action.getPaint(), canvas.getWidth(), Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
         myStaticLayout.draw(canvas);
         canvas.restore();
@@ -90,9 +104,131 @@ public class ImageEditorDrawable extends BitmapDrawable {
         actionList.set(index, rectAction);
     }
 
-    public void clear() {
-        actionList.clear();
+    /**
+     * 通过x，y坐标来选中元素
+     *
+     * @param x
+     * @param y
+     */
+    public Object[] selectAction(float x, float y) {
+        boolean isSelectFlag = false;
+        BaseAction selectAction = null;
+        int currentIndex = -1;
+        for (int i = actionList.size() - 1; i >= 0; i--) {
+            BaseAction action = actionList.get(i);
+            if (isSelectFlag) {
+                action.setSelect(false);
+                continue;
+            }
+            if (action instanceof LineAction) {
+                LineAction lineAction = (LineAction) action;
+                lineAction.setSelect(false);
+                if (isSelectInAction(x, y, lineAction)) {
+                    lineAction.setSelect(true);
+                    isSelectFlag = true;
+                    selectAction = lineAction;
+                    currentIndex = i;
+                }
+
+            } else if (action instanceof RectAction) {
+                RectAction rectAction = (RectAction) action;
+                if (isSelectInAction(x, y, rectAction)) {
+                    rectAction.setSelect(true);
+                    isSelectFlag = true;
+                    selectAction = rectAction;
+                    currentIndex = i;
+                } else {
+                    rectAction.setSelect(false);
+                }
+            } else if (action instanceof TextAction) {
+                TextAction textAction = (TextAction) action;
+                textAction.setSelect(false);
+            }
+        }
+        Object[] objects = new Object[2];
+        objects[0] = selectAction;
+        objects[1] = currentIndex;
+        return objects;
     }
 
+    /**
+     * 判断x，y是否在矩形的坐标中
+     *
+     * @param x
+     * @param y
+     * @param action
+     * @return
+     */
+    private boolean isSelectInAction(float x, float y, RectAction action) {
+        RectF rectF = action.getRect();
+        return x >= rectF.left && x <= rectF.right && y >= rectF.top && y <= rectF.bottom;
+    }
+
+    /**
+     * 判断x，y是否在线的坐标中
+     *
+     * @param x
+     * @param y
+     * @param action
+     * @return
+     */
+    private boolean isSelectInAction(float x, float y, LineAction action) {
+        //触摸点的判定范围
+        RectF rectF = new RectF(x - 11, y - 11, x + 11, y + 11);
+        //直线斜率
+        float k = (action.getEndX() - action.getStartX()) / (action.getEndY() - action.getStartY());
+        for (float i = 0; i <= Math.abs(action.getEndX() - action.getStartX()); i++) {
+            float dx = Math.abs(action.getStartX() + i);
+            float dy = k * dx;
+            if (rectF.contains(dx, dy)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 为矩形添加锚点
+     *
+     * @param action
+     */
+    private void drawRectAnchorPoint(RectAction action, Canvas canvas) {
+        GradientDrawable gradientDrawable = (GradientDrawable) context.getResources().getDrawable(R.drawable.anchor_point);
+        RectF rectF = action.getRect();
+        Rect anchorPoint = new Rect((int) rectF.right - 11, (int) rectF.bottom - 11, (int) rectF.right + 11, (int) rectF.bottom + 11);
+        action.setAnchorPointRect(anchorPoint);
+        gradientDrawable.setBounds(anchorPoint);
+        gradientDrawable.draw(canvas);
+    }
+
+    /**
+     * 为线添加锚点
+     */
+    private void drawLineAnchorPoint(LineAction action, Canvas canvas) {
+        GradientDrawable gradientDrawable = (GradientDrawable) context.getResources().getDrawable(R.drawable.anchor_point);
+        Rect[] anchorPoints = new Rect[2];
+        anchorPoints[0] = new Rect((int) action.getStartX() - 11, (int) action.getStartY() - 11,
+                (int) action.getStartX() + 11, (int) action.getStartY() + 11);
+        anchorPoints[1] = new Rect((int) action.getEndX() - 11, (int) action.getEndY() - 11,
+                (int) action.getEndX() + 11, (int) action.getEndY() + 11);
+        action.setAnchorPoints(anchorPoints);
+        gradientDrawable.setBounds(anchorPoints[0]);
+        gradientDrawable.draw(canvas);
+        gradientDrawable.setBounds(anchorPoints[1]);
+        gradientDrawable.draw(canvas);
+    }
+
+    /**
+     * 选中元素
+     */
+    public void selectAction(int index) {
+        for (int i = 0; i < actionList.size(); i++) {
+            if (i == index) {
+                actionList.get(i).setSelect(true);
+            } else {
+                actionList.get(i).setSelect(false);
+            }
+        }
+    }
 
 }

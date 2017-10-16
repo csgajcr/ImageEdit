@@ -4,6 +4,7 @@ package com.jcrspace.imageeditor.action;
  */
 
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.support.annotation.ColorInt;
 
 /**
@@ -19,6 +20,8 @@ public class LineAction implements BaseAction {
     private float endY;
     private int strokeWidth; //线的宽度
     private Paint paint;
+    private boolean isSelect = false;
+    private Rect[] anchorPoints;
 
     public LineAction(@ColorInt int color, int startX, int startY, int endX, int endY, int strokeWidth) {
         this.color = color;
@@ -87,4 +90,24 @@ public class LineAction implements BaseAction {
     public void setEndY(float endY) {
         this.endY = endY;
     }
+
+    @Override
+    public boolean isSelect() {
+        return isSelect;
+    }
+
+    @Override
+    public void setSelect(boolean isSelect){
+        this.isSelect = isSelect;
+    }
+
+    public Rect[] getAnchorPoints() {
+        return anchorPoints;
+    }
+
+    public void setAnchorPoints(Rect[] anchorPoints) {
+        this.anchorPoints = anchorPoints;
+    }
 }
+
+

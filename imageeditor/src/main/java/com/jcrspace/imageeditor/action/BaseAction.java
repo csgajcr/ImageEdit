@@ -9,4 +9,7 @@ package com.jcrspace.imageeditor.action;
  * @author ShaoWeng
  */
 public interface BaseAction {
+    boolean isSelect();
+
+    void setSelect(boolean isSelect);
 }

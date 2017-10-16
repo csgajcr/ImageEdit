@@ -16,6 +16,12 @@ public enum ImageEditorState {
     RECT_EDITING,
     //文本编辑中
     TEXT_EDITING,
+    //新框选
+    NEW_RECT,
+    //新划线,
+    NEW_LINE,
+    //移动,
+    MOVING,
     //空闲
     IDLE
 }

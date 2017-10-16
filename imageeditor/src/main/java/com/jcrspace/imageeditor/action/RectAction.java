@@ -18,6 +18,8 @@ public class RectAction implements BaseAction {
     private int color;
     private int strokeWidth; //粗细
     private Paint paint;
+    private boolean isSelect = false;
+    private Rect anchorPointRect; //锚点矩形
 
     public RectAction(RectF rect, @ColorInt int color, int strokeWidth) {
         this.rect = rect;
@@ -58,5 +60,23 @@ public class RectAction implements BaseAction {
 
     public void setRect(RectF rect) {
         this.rect = rect;
+    }
+
+    @Override
+    public boolean isSelect() {
+        return isSelect;
+    }
+
+    @Override
+    public void setSelect(boolean isSelect){
+        this.isSelect = isSelect;
+    }
+
+    public Rect getAnchorPointRect() {
+        return anchorPointRect;
+    }
+
+    public void setAnchorPointRect(Rect anchorPointRect) {
+        this.anchorPointRect = anchorPointRect;
     }
 }
