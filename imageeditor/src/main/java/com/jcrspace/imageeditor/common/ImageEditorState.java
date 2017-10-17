@@ -20,6 +20,8 @@ public enum ImageEditorState {
     NEW_RECT,
     //新划线,
     NEW_LINE,
+    //新文本,
+    NEW_TEXT,
     //移动,
     MOVING,
     //空闲

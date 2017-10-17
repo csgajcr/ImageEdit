@@ -37,7 +37,8 @@ public class ImageEditView extends ZoomImageView {
     private float startY;
     private BaseAction currentEditAction; //当前编辑的线条
     private int currentEditActionId; //当前编辑的线条Id
-    private static int EXPAND_ANCHOR_POINT_TOUCH_SIZE = 7;//扩充锚点触摸的判定范围
+    private static int EXPAND_ANCHOR_POINT_TOUCH_SIZE = 9;//扩充锚点触摸的判定范围
+    private BottomControlPanelView mBottomControlPanelView;
 
     float[] matrix = new float[9]; // 当前的图像的矩阵信息
 
@@ -113,7 +114,7 @@ public class ImageEditView extends ZoomImageView {
         if (mImageEditorDrawable == null) {
             return;
         }
-        currentState = ImageEditorState.TEXT_EDITING;
+        currentState = ImageEditorState.NEW_TEXT;
         currentEditAction = new TextAction("", color, 0, 0, fontSize);
     }
 
@@ -145,7 +146,7 @@ public class ImageEditView extends ZoomImageView {
                     currentRectEditAction.setRect(rect);
                     currentEditActionId = mImageEditorDrawable.addRect(currentRectEditAction);
                     currentState = ImageEditorState.RECT_EDITING;
-                } else if (currentState == ImageEditorState.TEXT_EDITING) {
+                } else if (currentState == ImageEditorState.NEW_TEXT) {
                     //文本编辑状态
                     showPopView(x, y);
                 } else if (currentState == ImageEditorState.IDLE) {
@@ -162,10 +163,12 @@ public class ImageEditView extends ZoomImageView {
                     LineAction currentLineEditAction = (LineAction) currentEditAction;
                     currentLineEditAction.setEndX(calcRealX(x));
                     currentLineEditAction.setEndY(calcRealY(y));
+                    currentEditAction.setSelect(false);
                     mImageEditorDrawable.updateLine(currentEditActionId, currentLineEditAction);
                     invalidate();
                 } else if (currentState == ImageEditorState.RECT_EDITING) {
                     RectAction currentRectEditAction = (RectAction) currentEditAction;
+                    currentEditAction.setSelect(false);
                     rectDirectionTransform(currentRectEditAction.getRect(), calcRealX(x), calcRealY(y));
                     mImageEditorDrawable.updateRect(currentEditActionId, currentRectEditAction);
                     invalidate();
@@ -180,8 +183,7 @@ public class ImageEditView extends ZoomImageView {
                     mImageEditorDrawable.selectAction(currentEditActionId);
                     currentState = ImageEditorState.SELECTING;
                 } else if (currentState == ImageEditorState.RECT_EDITING) {
-                    mImageEditorDrawable.selectAction(currentEditActionId);
-                    currentState = ImageEditorState.SELECTING;
+                    checkRectSize();
                 } else if (currentState == ImageEditorState.MOVING) {
                     currentState = ImageEditorState.SELECTING;
                 }
@@ -280,12 +282,13 @@ public class ImageEditView extends ZoomImageView {
         final EditTextPopupView popupView = new EditTextPopupView(getContext());
         popupView.setTextColor(currentTextEditAction.getColor());
         popupView.setTextSize(currentTextEditAction.getFontSize());
-        popupView.showAtLocation(this, Gravity.NO_GRAVITY, getLeft() + (int) x, getTop() + (int) y);
+        popupView.showAtLocation(this, Gravity.NO_GRAVITY, (int) x - 50, (int) y - 50);
         popupView.setOnDismissListener(new PopupWindow.OnDismissListener() {
             @Override
             public void onDismiss() {
                 //编辑框消失，文本编辑结束
                 renderText(popupView, currentTextEditAction);
+
             }
         });
     }
@@ -295,10 +298,15 @@ public class ImageEditView extends ZoomImageView {
      */
     private void renderText(EditTextPopupView popupView, TextAction textAction) {
         String inputText = popupView.getText().toString();
+        if ("".equals(inputText)) {
+            return;
+        }
         textAction.setText(inputText);
-        textAction.setStartX(startX);
-        textAction.setStartY(startY);
+        textAction.setStartX(startX - 50);
+        textAction.setStartY(startY - 50);
+        textAction.setTextBitmap(popupView.getTextBitmap());
         mImageEditorDrawable.updateText(currentEditActionId, textAction);
+        currentState = ImageEditorState.IDLE;
         invalidate();
     }
 
@@ -332,19 +340,36 @@ public class ImageEditView extends ZoomImageView {
             lineAction.setEndX(lineAction.getEndX() + x - startX);
             lineAction.setStartY(lineAction.getStartY() + y - startY);
             lineAction.setEndY(lineAction.getEndY() + y - startY);
-            mImageEditorDrawable.updateLine(currentEditActionId,lineAction);
+            mImageEditorDrawable.updateLine(currentEditActionId, lineAction);
             startX = x;
             startY = y;
         } else if (currentEditAction instanceof RectAction) {
             RectAction rectAction = (RectAction) currentEditAction;
             RectF rectF = rectAction.getRect();
+            float imageHeight = getDrawable().getMinimumHeight();
+            float imageWidth = getDrawable().getMinimumWidth();
+            RectF temp = new RectF(rectF);
             rectF.left += x - startX;
             rectF.right += x - startX;
             rectF.top += y - startY;
             rectF.bottom += y - startY;
-            mImageEditorDrawable.updateRect(currentEditActionId, rectAction);
             startX = x;
             startY = y;
+            //边缘判定
+            if (rectF.left < 0) {
+                rectF.left = 0;
+            } else if (rectF.top < 0) {
+                rectF.top = 0;
+            } else if (rectF.right > imageWidth) {
+                rectF.right = imageWidth;
+            } else if (rectF.bottom > imageHeight) {
+                rectF.bottom = imageHeight;
+            } else {
+                return;
+            }
+            rectF.set(temp);
+
+
         } else if (currentEditAction instanceof TextAction) {
 
         }
@@ -416,11 +441,35 @@ public class ImageEditView extends ZoomImageView {
             startY = lineAction.getStartY();
             currentState = ImageEditorState.LINE_EDITING;
             return;
-        } else if (mImageEditorDrawable.isSelectInAction(x,y,lineAction)){
+        } else if (mImageEditorDrawable.isSelectInAction(x, y, lineAction)) {
             currentState = ImageEditorState.MOVING;
             return;
         }
         selectAction();
+    }
+
+    /**
+     * 检测矩形的大小，如果太小，不添加
+     */
+    private void checkRectSize() {
+        RectAction rectAction = (RectAction) currentEditAction;
+        if (rectAction.getRect().width() < 20 && rectAction.getRect().height() < 20) {
+            mImageEditorDrawable.removeAction(currentEditActionId);
+            currentEditActionId = -1;
+            currentEditAction = null;
+            currentState = ImageEditorState.IDLE;
+            return;
+        }
+        mImageEditorDrawable.selectAction(currentEditActionId);
+        currentState = ImageEditorState.SELECTING;
+    }
+
+    /**
+     * 与底部操作控件绑定
+     * @param controlPanel
+     */
+    public void setControlPanel(BottomControlPanelView controlPanel){
+        this.mBottomControlPanelView = controlPanel;
     }
 
 }

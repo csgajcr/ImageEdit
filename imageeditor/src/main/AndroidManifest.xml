@@ -4,7 +4,12 @@
 
     <application android:allowBackup="true" android:label="@string/app_name"
         android:supportsRtl="true">
-
+        <activity
+            android:name=".ImageEditActivity"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme"
+            android:screenOrientation="portrait">
+        </activity>
     </application>
 
 </manifest>

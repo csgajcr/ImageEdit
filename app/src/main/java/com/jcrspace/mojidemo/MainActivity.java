@@ -1,5 +1,6 @@
 package com.jcrspace.mojidemo;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -8,11 +9,12 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.jcrspace.imageeditor.ImageEditActivity;
 import com.jcrspace.imageeditor.view.ImageEditView;
 
 public class MainActivity extends AppCompatActivity {
 
-    private ImageEditView imageEditView;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,23 +23,10 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        imageEditView = (ImageEditView) findViewById(R.id.img_view);
-        findViewById(R.id.btn_add_line).setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.btn_edit_image).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                imageEditView.setLineMode(Color.RED, 10);
-            }
-        });
-        findViewById(R.id.btn_add_rect).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                imageEditView.setRectSelectionMode(Color.RED, 10);
-            }
-        });
-        findViewById(R.id.btn_add_text).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                imageEditView.setTextEditMode(Color.GREEN, 20);
+                startActivity(new Intent(MainActivity.this, ImageEditActivity.class));
             }
         });
     }

@@ -1,5 +1,6 @@
 package com.jcrspace.imageeditor.action;
 
+import android.graphics.Bitmap;
 import android.graphics.Paint;
 import android.support.annotation.ColorInt;
 import android.text.TextPaint;
@@ -15,6 +16,7 @@ public class TextAction implements BaseAction {
     private TextPaint paint;
     private int color;
     private int fontSize;
+    private Bitmap textBitmap;
     private boolean isSelect = false;
 
     public TextAction(String text, @ColorInt int color, float startX, float startY, int fontSize) {
@@ -83,5 +85,13 @@ public class TextAction implements BaseAction {
     @Override
     public void setSelect(boolean isSelect){
         this.isSelect = isSelect;
+    }
+
+    public Bitmap getTextBitmap() {
+        return textBitmap;
+    }
+
+    public void setTextBitmap(Bitmap textBitmap) {
+        this.textBitmap = textBitmap;
     }
 }

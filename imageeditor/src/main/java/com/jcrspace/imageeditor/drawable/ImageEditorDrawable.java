@@ -69,12 +69,14 @@ public class ImageEditorDrawable extends BitmapDrawable {
     }
 
     private void drawText(Canvas canvas, TextAction action) {
-//        canvas.drawText(action.getText(),action.getStartX(),action.getStartY(),action.getPaint());
-        canvas.save();
-        canvas.translate(action.getStartX(), action.getStartY());
-        StaticLayout myStaticLayout = new StaticLayout(action.getText(), action.getPaint(), canvas.getWidth(), Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
-        myStaticLayout.draw(canvas);
-        canvas.restore();
+//        canvas.save();
+//        canvas.translate(action.getStartX(), action.getStartY());
+//        StaticLayout myStaticLayout = new StaticLayout(action.getText(), action.getPaint(), canvas.getWidth(), Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
+//        myStaticLayout.draw(canvas);
+//        canvas.restore();
+        if (action.getTextBitmap()!=null){
+            canvas.drawBitmap(action.getTextBitmap(),action.getStartX(),action.getStartY(),action.getPaint());
+        }
     }
 
 
@@ -196,6 +198,12 @@ public class ImageEditorDrawable extends BitmapDrawable {
         if (result > r) {
             return false;
         } else {
+            /**
+             * 如果实在半径内。
+             * 以线条作为对角线做矩形。
+             * 扩大矩形尺寸r
+             * 判断该点是否在矩形中
+             */
             RectF rectF = new RectF();
             rectF.left = action.getStartX() > action.getEndX() ? action.getEndX() : action.getStartX();
             rectF.right = action.getStartX() > action.getEndX() ? action.getStartX() : action.getEndX();
@@ -238,7 +246,7 @@ public class ImageEditorDrawable extends BitmapDrawable {
     }
 
     /**
-     * 选中元素
+     * 根据元素下标，选中元素
      */
     public void selectAction(int index) {
         for (int i = 0; i < actionList.size(); i++) {
@@ -249,5 +257,14 @@ public class ImageEditorDrawable extends BitmapDrawable {
             }
         }
     }
+
+    /**
+     * 根据元素下标删除元素
+     * @param index
+     */
+    public void removeAction(int index){
+        actionList.remove(index);
+    }
+
 
 }

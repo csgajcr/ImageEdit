@@ -260,7 +260,7 @@ public class ZoomImageView extends ImageView implements ViewTreeObserver.OnGloba
     /**
      * 是否是Debug模式
      */
-    private static boolean IS_DEBUG = true;
+    private static boolean IS_DEBUG = false;
 
     /**
      * 打印日志

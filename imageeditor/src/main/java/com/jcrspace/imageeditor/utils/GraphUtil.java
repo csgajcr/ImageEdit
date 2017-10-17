@@ -12,8 +12,8 @@ public class GraphUtil {
     public static void zoomRect(Rect rect, int size) {
         rect.bottom += size;
         rect.right += size;
-        rect.top += size;
-        rect.left += size;
+        rect.top -= size;
+        rect.left -= size;
     }
 
     public static void zoomRect(RectF rect, float size) {
