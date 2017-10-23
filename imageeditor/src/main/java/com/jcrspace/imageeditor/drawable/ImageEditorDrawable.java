@@ -69,14 +69,10 @@ public class ImageEditorDrawable extends BitmapDrawable {
     }
 
     private void drawText(Canvas canvas, TextAction action) {
-//        canvas.save();
-//        canvas.translate(action.getStartX(), action.getStartY());
-//        StaticLayout myStaticLayout = new StaticLayout(action.getText(), action.getPaint(), canvas.getWidth(), Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
-//        myStaticLayout.draw(canvas);
-//        canvas.restore();
-        if (action.getTextBitmap()!=null){
-            canvas.drawBitmap(action.getTextBitmap(),action.getStartX(),action.getStartY(),action.getPaint());
+        if (action.getTextBitmap() != null && !action.isSelect()) {
+            canvas.drawBitmap(action.getTextBitmap(), action.getStartX(), action.getStartY(), action.getPaint());
         }
+
     }
 
 
@@ -145,7 +141,14 @@ public class ImageEditorDrawable extends BitmapDrawable {
                 }
             } else if (action instanceof TextAction) {
                 TextAction textAction = (TextAction) action;
-                textAction.setSelect(false);
+                if (isSelectInAction(x,y,textAction)){
+                    textAction.setSelect(true);
+                    isSelectFlag = true;
+                    selectAction = textAction;
+                    currentIndex = i;
+                } else {
+                    textAction.setSelect(false);
+                }
             }
         }
         Object[] objects = new Object[2];
@@ -209,9 +212,24 @@ public class ImageEditorDrawable extends BitmapDrawable {
             rectF.right = action.getStartX() > action.getEndX() ? action.getStartX() : action.getEndX();
             rectF.top = action.getStartY() > action.getEndY() ? action.getEndY() : action.getStartY();
             rectF.bottom = action.getStartY() > action.getEndY() ? action.getStartY() : action.getEndY();
-            GraphUtil.zoomRect(rectF,r);
-            return rectF.contains(x,y);
+            GraphUtil.zoomRect(rectF, r);
+            return rectF.contains(x, y);
         }
+    }
+
+    /**
+     * 判断x，y是否在线的坐标中
+     *
+     * @param x
+     * @param y
+     * @param action
+     * @return
+     */
+    public boolean isSelectInAction(float x, float y, TextAction action) {
+        Bitmap bitmap = action.getTextBitmap();
+        RectF rectF = new RectF(action.getStartX(), action.getStartY(),
+                action.getStartX() + bitmap.getWidth(), action.getStartY() + bitmap.getHeight());
+        return rectF.contains(x, y);
     }
 
     /**
@@ -260,9 +278,10 @@ public class ImageEditorDrawable extends BitmapDrawable {
 
     /**
      * 根据元素下标删除元素
+     *
      * @param index
      */
-    public void removeAction(int index){
+    public void removeAction(int index) {
         actionList.remove(index);
     }
 

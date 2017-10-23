@@ -13,9 +13,11 @@ public class TextAction implements BaseAction {
     private String text;
     private float startX;
     private float startY;
+    private float endX;
+    private float endY;
     private TextPaint paint;
     private int color;
-    private int fontSize;
+    private float fontSize;
     private Bitmap textBitmap;
     private boolean isSelect = false;
 
@@ -52,15 +54,6 @@ public class TextAction implements BaseAction {
         paint.setColor(color);
     }
 
-    public int getFontSize() {
-        return fontSize;
-    }
-
-    public void setFontSize(int fontSize) {
-        this.fontSize = fontSize;
-        paint.setTextSize(fontSize);
-    }
-
     public float getStartX() {
         return startX;
     }
@@ -93,5 +86,30 @@ public class TextAction implements BaseAction {
 
     public void setTextBitmap(Bitmap textBitmap) {
         this.textBitmap = textBitmap;
+    }
+
+    public float getFontSize() {
+        return fontSize;
+    }
+
+    public void setFontSize(float fontSize) {
+        this.fontSize = fontSize;
+        paint.setTextSize(fontSize);
+    }
+
+    public float getEndX() {
+        return endX;
+    }
+
+    public void setEndX(float endX) {
+        this.endX = endX;
+    }
+
+    public float getEndY() {
+        return endY;
+    }
+
+    public void setEndY(float endY) {
+        this.endY = endY;
     }
 }

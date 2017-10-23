@@ -18,6 +18,7 @@
     <com.jcrspace.imageeditor.view.BottomControlPanelView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:id="@+id/bottom_control_view"
         android:layout_gravity="bottom"></com.jcrspace.imageeditor.view.BottomControlPanelView>
     <RelativeLayout
         android:layout_width="match_parent"
@@ -42,4 +43,9 @@
             android:layout_alignParentRight="true"
             android:textColor="@color/white"/>
     </RelativeLayout>
+
+    <com.jcrspace.imageeditor.view.EditTextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/ev_text"></com.jcrspace.imageeditor.view.EditTextView>
 </FrameLayout>

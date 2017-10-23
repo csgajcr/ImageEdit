@@ -12,10 +12,8 @@ import android.graphics.drawable.Drawable;
 import android.support.annotation.ColorInt;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.PopupWindow;
 
 import com.jcrspace.imageeditor.action.BaseAction;
 import com.jcrspace.imageeditor.action.LineAction;
@@ -38,7 +36,7 @@ public class ImageEditView extends ZoomImageView {
     private BaseAction currentEditAction; //当前编辑的线条
     private int currentEditActionId; //当前编辑的线条Id
     private static int EXPAND_ANCHOR_POINT_TOUCH_SIZE = 9;//扩充锚点触摸的判定范围
-    private BottomControlPanelView mBottomControlPanelView;
+    private EditTextView mEditTextView;
 
     float[] matrix = new float[9]; // 当前的图像的矩阵信息
 
@@ -148,7 +146,7 @@ public class ImageEditView extends ZoomImageView {
                     currentState = ImageEditorState.RECT_EDITING;
                 } else if (currentState == ImageEditorState.NEW_TEXT) {
                     //文本编辑状态
-                    showPopView(x, y);
+                    textPopViewProcessing(x, y);
                 } else if (currentState == ImageEditorState.IDLE) {
                     //空闲状态
                     selectAction();
@@ -156,6 +154,8 @@ public class ImageEditView extends ZoomImageView {
                 } else if (currentState == ImageEditorState.SELECTING) {
                     isActionControl(startX, startY);
                     invalidate();
+                } else if (currentState == ImageEditorState.TEXT_EDITING) {
+                    textPopViewProcessing(x, y);
                 }
                 break;
             case MotionEvent.ACTION_MOVE:
@@ -195,7 +195,7 @@ public class ImageEditView extends ZoomImageView {
     }
 
     private boolean canZoom() {
-        return currentState == ImageEditorState.IDLE || currentState == ImageEditorState.SELECTING;
+        return currentState == ImageEditorState.IDLE;
     }
 
     /**
@@ -218,6 +218,36 @@ public class ImageEditView extends ZoomImageView {
         } else {
             return realX;
         }
+    }
+
+    /**
+     * 通过图像额位置，计算屏幕坐标
+     * calcRealX的逆运算
+     *
+     * @param realX
+     * @return
+     */
+    private float calcScreenX(float realX) {
+        getImageMatrix().getValues(matrix);
+        float scale = matrix[0]; // 缩放比率
+        float transX = matrix[2]; //X轴偏移
+        float screenX = realX * scale + transX;
+        return screenX;
+    }
+
+    /**
+     * 通过图像额位置，计算屏幕坐标
+     * calcRealY的逆运算
+     *
+     * @param realY
+     * @return
+     */
+    private float calcScreenY(float realY) {
+        getImageMatrix().getValues(matrix);
+        float scale = matrix[0]; // 缩放比率
+        float transY = matrix[5]; //Y轴偏移
+        float screenY = realY * scale + transY;
+        return screenY;
     }
 
     /**
@@ -274,37 +304,50 @@ public class ImageEditView extends ZoomImageView {
     }
 
     /**
-     * 显示文字编辑框
+     * 文字弹框相关处理
+     *
+     * @param startX
+     * @param startY
      */
-    private void showPopView(float x, float y) {
-        final TextAction currentTextEditAction = (TextAction) currentEditAction;
-        currentEditActionId = mImageEditorDrawable.addText(currentTextEditAction);
-        final EditTextPopupView popupView = new EditTextPopupView(getContext());
-        popupView.setTextColor(currentTextEditAction.getColor());
-        popupView.setTextSize(currentTextEditAction.getFontSize());
-        popupView.showAtLocation(this, Gravity.NO_GRAVITY, (int) x - 50, (int) y - 50);
-        popupView.setOnDismissListener(new PopupWindow.OnDismissListener() {
-            @Override
-            public void onDismiss() {
-                //编辑框消失，文本编辑结束
-                renderText(popupView, currentTextEditAction);
+    private void textPopViewProcessing(float startX, float startY) {
+        TextAction currentTextEditAction = (TextAction) currentEditAction;
+        if (mEditTextView.getVisibility() == VISIBLE) { //在已弹出的情况下，点击其他地方。
+            //编辑框消失，文本编辑结束
+            renderText(currentTextEditAction);
+            mEditTextView.hide();
+            return;
+        }
+        mEditTextView.setTextColor(currentTextEditAction.getColor());
+        mEditTextView.setText(currentTextEditAction.getText());
+        mEditTextView.setTextSize(currentTextEditAction.getFontSize(), matrix[0]); //字大小除缩放比
+        if (currentState == ImageEditorState.NEW_TEXT) {
+            mEditTextView.showAtLocation(startX, startY, calcScreenX(mImageEditorDrawable.getMinimumWidth()));
+            currentEditActionId = mImageEditorDrawable.addText(currentTextEditAction);
+            mEditTextView.setFocus();
+            mEditTextView.hideAnchor();
 
-            }
-        });
+        } else if (currentState == ImageEditorState.TEXT_EDITING) {
+            mEditTextView.showAtLocation(startX, startY, calcScreenX(currentTextEditAction.getEndX()));
+            mEditTextView.clearFocus();
+            mEditTextView.showAnchor();
+        }
     }
 
     /**
      * 渲染文字到Image上
      */
-    private void renderText(EditTextPopupView popupView, TextAction textAction) {
-        String inputText = popupView.getText().toString();
+    private void renderText(TextAction textAction) {
+        String inputText = mEditTextView.getText().toString();
         if ("".equals(inputText)) {
             return;
         }
         textAction.setText(inputText);
-        textAction.setStartX(startX - 50);
-        textAction.setStartY(startY - 50);
-        textAction.setTextBitmap(popupView.getTextBitmap());
+        textAction.setStartX(calcRealX(mEditTextView.getLeft()));
+        textAction.setStartY(calcRealY(mEditTextView.getTop()));
+        textAction.setEndX(calcRealX(mEditTextView.getRight()));
+        textAction.setEndY(calcRealY(mEditTextView.getBottom()));
+        textAction.setTextBitmap(mEditTextView.getTextBitmap());
+        textAction.setSelect(false);
         mImageEditorDrawable.updateText(currentEditActionId, textAction);
         currentState = ImageEditorState.IDLE;
         invalidate();
@@ -323,7 +366,7 @@ public class ImageEditView extends ZoomImageView {
         } else if (currentEditAction instanceof RectAction) {
             rectActionControl(x, y); // 判断点击矩形的什么地方，锚点还是矩形内部，如果都不是则看能不能选择到其他元素
         } else if (currentEditAction instanceof TextAction) {
-
+//            textActionControl(x, y);
         }
     }
 
@@ -385,6 +428,14 @@ public class ImageEditView extends ZoomImageView {
             currentState = ImageEditorState.SELECTING;
             currentEditAction = action;
             currentEditActionId = (int) objects[1];
+            //TextAction需要特殊处理，Line和RectActionDrawable会绘制好锚点。而TextAction选中后
+            //drawable会停止渲染text的bitmap，需要弹出popupView来进行展示
+            if (action instanceof TextAction) {
+                TextAction textAction = (TextAction) action;
+                currentState = ImageEditorState.TEXT_EDITING;
+                textPopViewProcessing(calcScreenX(textAction.getStartX()), calcScreenY(textAction.getStartY()));
+                invalidate();
+            }
         } else {
             currentState = ImageEditorState.IDLE;
             currentEditAction = null;
@@ -449,6 +500,17 @@ public class ImageEditView extends ZoomImageView {
     }
 
     /**
+     * 当选择文字的情况，判断他点击的啥
+     *
+     * @param x
+     * @param y
+     */
+    private void textActionControl(float x, float y) {
+
+
+    }
+
+    /**
      * 检测矩形的大小，如果太小，不添加
      */
     private void checkRectSize() {
@@ -465,11 +527,12 @@ public class ImageEditView extends ZoomImageView {
     }
 
     /**
-     * 与底部操作控件绑定
-     * @param controlPanel
+     * 设置文字编辑框
+     *
+     * @param editTextView
      */
-    public void setControlPanel(BottomControlPanelView controlPanel){
-        this.mBottomControlPanelView = controlPanel;
+    public void setEditTextView(EditTextView editTextView) {
+        mEditTextView = editTextView;
+        mEditTextView.setVisibility(GONE);
     }
-
 }
